@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MabaOps</title>
+<style>
+  :root {
+    --bg: #0f1420; --card: #1a2233; --card2: #212c42; --text: #e8ecf4;
+    --dim: #8b96ab; --accent: #5b9dff; --green: #4ade80; --red: #f87171;
+    --yellow: #fbbf24; --magenta: #c084fc; --border: #2b3752;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, sans-serif; padding: 24px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--dim); font-size: .9rem; margin-bottom: 24px; }
+  h2 { font-size: 1rem; margin-bottom: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+  h2.budget { color: var(--magenta); }
+  h2.tasks { color: var(--yellow); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .card h3 { font-size: .85rem; color: var(--dim); font-weight: 600; margin-bottom: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .row:last-child { border-bottom: none; }
+  .badge { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .OVERDUE { background: var(--red); color: #000; }
+  .URGENT { background: var(--yellow); color: #000; }
+  .OK { background: var(--card2); color: var(--dim); }
+  .DONE { background: var(--card2); color: var(--dim); }
+  .pending { color: var(--dim); } .in_progress { color: var(--accent); } .done { color: var(--green); }
+  .muted { color: var(--dim); font-size: .85rem; }
+  form.inline { display: flex; gap: 6px; }
+  button { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: .8rem; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border: none; }
+  button.danger:hover { border-color: var(--red); color: var(--red); }
+  form.stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }
+  input, select { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: .85rem; width: 100%; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .bar { background: var(--card2); border-radius: 99px; height: 10px; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; background: var(--green); border-radius: 99px; }
+  .bar.warn > div { background: var(--yellow); } .bar.danger > div { background: var(--red); }
+  .big { font-size: 1.3rem; font-weight: 700; }
+  .green { color: var(--green); } .red { color: var(--red); } .yellow { color: var(--yellow); }
+  .status { padding: 8px 12px; border-radius: 8px; font-size: .85rem; margin-top: 10px; background: var(--card2); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th { text-align: left; color: var(--dim); font-size: .75rem; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .setup { text-align: center; margin-top: 15vh; }
+  .setup code { background: var(--card2); padding: 4px 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Maba<span>Ops</span></h1>
+  <p class="subtitle">Hari ini: {{ today_name }} &middot; data: {{ data_dir }}</p>
+
+  <div class="grid">
+    <!-- JADWAL -->
+    <div class="card">
+      <h2>Jadwal Kuliah</h2>
+      {% for item in today_schedule %}
+      <div class="row">
+        <div><strong>{{ item.start_time }}-{{ item.end_time }}</strong> {{ item.course_code }} {{ item.course_name }}<br><span class="muted">{{ item.building }} {{ item.room }}</span></div>
+        <form class="inline" method="post" action="/schedule/{{ item.id }}/delete" onsubmit="return confirm('Hapus jadwal ini?')"><button class="danger">&times;</button></form>
+      </div>
+      {% else %}
+      <p class="muted">Belum ada jadwal hari ini.</p>
+      {% endfor %}
+
+      <details {% if not schedule %}open{% endif %}>
+        <summary class="muted">Semua jadwal ({{ schedule|length }}) &mdash; klik untuk lihat/tambah</summary>
+        {% for item in schedule %}
+        <div class="row">
+          <div><strong>{{ item.day }}</strong> {{ item.start_time }}-{{ item.end_time }} &middot; {{ item.course_code }} {{ item.course_name }}<br><span class="muted">{{ item.building }} {{ item.room }}</span></div>
+          <form class="inline" method="post" action="/schedule/{{ item.id }}/delete" onsubmit="return confirm('Hapus jadwal ini?')"><button class="danger">&times;</button></form>
+        </div>
+        {% endfor %}
+        <form class="stack" method="post" action="/schedule/add">
+          <input name="course_code" placeholder="Kode (IF101)" required>
+          <input name="course_name" placeholder="Nama matkul" required>
+          <select name="day" required>
+            {% for d in ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"] %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+          <input name="start_time" placeholder="Mulai 08:00" required>
+          <input name="end_time" placeholder="Selesai 10:30" required>
+          <input name="building" placeholder="Gedung">
+          <input name="room" placeholder="Ruang">
+          <input name="notes" placeholder="Catatan">
+          <button class="primary" type="submit">+ Tambah Jadwal</button>
+        </form>
+      </details>
+    </div>
+
+    <!-- TUGAS -->
+    <div class="card">
+      <h2 class="tasks">Tugas &amp; Deadline</h2>
+      {% for task in open_tasks[:6] %}
+      <div class="row">
+        <div>
+          <span class="badge {{ task.urgency_label }}">{{ task.urgency_label }}</span>
+          <strong>{{ task.title }}</strong> <span class="muted">{{ task.due_date[:10] }}{% if task.course_code %} &middot; {{ task.course_code }}{% endif %}</span>
+        </div>
+        <div class="inline">
+          <form class="inline" method="post" action="/task/{{ task.id }}/status">
+            {% if task.status != 'in_progress' %}
+            <input type="hidden" name="status" value="in_progress"><button title="Mulai">&#9654;</button>
+            {% else %}
+            <input type="hidden" name="status" value="pending"><button title="Kembali ke pending">&#10074;&#10074;</button>
+            {% endif %}
+          </form>
+          <form class="inline" method="post" action="/task/{{ task.id }}/status">
+            <input type="hidden" name="status" value="done"><button title="Selesai">&#10003;</button>
+          </form>
+          <form class="inline" method="post" action="/task/{{ task.id }}/delete" onsubmit="return confirm('Hapus tugas ini?')"><button class="danger">&times;</button></form>
+        </div>
+      </div>
+      {% else %}
+      <p class="muted">Belum ada tugas aktif.</p>
+      {% endfor %}
+
+      <details>
+        <summary class="muted">Tugas selesai ({{ tasks|length - open_tasks|length }})</summary>
+        {% for task in tasks if task.status == 'done' %}
+        <div class="row">
+          <div><span class="badge DONE">DONE</span> <span class="muted"><s>{{ task.title }}</s></span></div>
+          <div class="inline">
+            <form class="inline" method="post" action="/task/{{ task.id }}/status">
+              <input type="hidden" name="status" value="pending"><button title="Buka lagi">&#8635;</button>
+            </form>
+            <form class="inline" method="post" action="/task/{{ task.id }}/delete" onsubmit="return confirm('Hapus tugas ini?')"><button class="danger">&times;</button></form>
+          </div>
+        </div>
+        {% endfor %}
+      </details>
+
+      <form class="stack" method="post" action="/task/add">
+        <input name="title" placeholder="Judul tugas" required>
+        <input name="due" placeholder="Deadline 2026-09-30" required>
+        <input name="estimate" type="number" placeholder="Estimasi (menit)" min="0">
+        <input name="course" placeholder="Kode MK">
+        <button class="primary" type="submit">+ Tambah Tugas</button>
+      </form>
+    </div>
+
+    <!-- BUDGET -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <h2 class="budget">Budget Mingguan</h2>
+      {% if summary.weekly_budget > 0 %}
+      <div class="row">
+        <div>
+          <span class="muted">Budget</span> <span class="big">{{ fmt(summary.weekly_budget) }}</span>
+          &nbsp;&middot;&nbsp; <span class="muted">Spent</span> <span class="red">{{ fmt(summary.spent) }}</span>
+          &nbsp;&middot;&nbsp; <span class="muted">Left</span> <span class="{{ 'red' if summary.remaining < 0 else 'green' }}">{{ fmt(summary.remaining) }}</span>
+          {% if summary.income %}&nbsp;&middot;&nbsp; <span class="muted">Income</span> <span class="green">{{ fmt(summary.income) }}</span>{% endif %}
+        </div>
+        <div class="muted">Proyeksi akhir minggu: {{ fmt(summary.projected_end_of_week) }} &middot; sisa {{ summary.days_left }} hari</div>
+      </div>
+      <div class="bar {{ 'danger' if summary.remaining < 0 else 'warn' if summary.status == 'warning' }}" data-pct="{{ (summary.spent * 100 // (summary.weekly_budget + summary.income)) if (summary.weekly_budget + summary.income) > 0 else 0 }}">
+        <div style="width: {{ (summary.spent * 100 // (summary.weekly_budget + summary.income)) if (summary.weekly_budget + summary.income) > 0 else 0 }}%"></div>
+      </div>
+      {% if summary.status == 'warning' %}<div class="status">⚠ Proyeksi akhir minggu melebihi budget.</div>{% endif %}
+      {% if summary.status == 'deficit' %}<div class="status">⚠ Pengeluaran sudah melebihi budget. Perlu perhatian.</div>{% endif %}
+      {% else %}
+      <p class="muted">Budget belum diset.</p>
+      {% endif %}
+
+      <form class="stack" method="post" action="/budget/add">
+        <select name="entry_type">
+          <option value="expense">Pengeluaran</option>
+          <option value="income">Pemasukan</option>
+        </select>
+        <input name="amount" type="number" placeholder="Jumlah (Rp)" min="1" required>
+        <select name="category">
+          {% for c in ["makan","transport","print","organisasi","hiburan","lain-lain"] %}
+          <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
+        <input name="note" placeholder="Catatan">
+        <button class="primary" type="submit">+ Catat</button>
+      </form>
+
+      <details>
+        <summary class="muted">Riwayat entri ({{ budget_entries|length }}) &amp; set budget</summary>
+        <table>
+          {% for e in budget_entries %}
+          <tr>
+            <td class="muted">{{ e.created_at[:16].replace('T', ' ') }}</td>
+            <td class="{{ 'red' if e.type == 'expense' else 'green' }}">{{ '+' if e.type == 'income' else '-' }}{{ fmt(e.amount) }}</td>
+            <td>{{ e.category }}</td>
+            <td class="muted">{{ e.note or '-' }}</td>
+            <td><form class="inline" method="post" action="/budget/{{ e.id }}/delete" onsubmit="return confirm('Hapus entri ini?')"><button class="danger">&times;</button></form></td>
+          </tr>
+          {% endfor %}
+        </table>
+        <form class="stack" method="post" action="/budget/set-weekly">
+          <input name="amount" type="number" placeholder="Set budget mingguan (Rp)" min="0" required>
+          <button type="submit">Set Budget</button>
+        </form>
+      </details>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Local data / secrets
+.env
+.env.*
+!.env.example
+.mabaops/
+reports/*.md
+data/
+data_backup_demo/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
