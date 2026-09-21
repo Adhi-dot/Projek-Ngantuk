@@ -8,7 +8,7 @@ Panduan lengkap cara pakai MabaOps dari nol sampai lancar.
 
 ```bash
 # Clone & install (butuh Python 3.11+)
-git clone <repo-url> && cd mabaops
+git clone https://github.com/Adhi-dot/Projek-Ngantuk.git && cd Projek-Ngantuk
 pip install -e .[dev]
 ```
 

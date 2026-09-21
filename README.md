@@ -13,7 +13,6 @@ MabaOps is a local-first CLI/TUI command center for jadwal kuliah, deadline tuga
 ## Screenshot
 
 <!-- TODO: Tambahkan screenshot `mabaops dashboard` di screenshots/ -->
-
 ```text
 +------------------+
 | Hari ini: Senin  |
@@ -31,7 +30,7 @@ Fokus: Kerjakan satu tugas prioritas selama 25-45 menit.
 **Windows (one-click):**
 
 ```bat
-git clone <repo-url> && cd mabaops
+git clone https://github.com/Adhi-dot/Projek-Ngantuk.git && cd Projek-Ngantuk
 setup.bat
 
 mabaops.bat dashboard
@@ -40,7 +39,7 @@ mabaops.bat dashboard
 Atau manual (semua OS):
 
 ```bash
-git clone <repo-url> && cd mabaops
+git clone https://github.com/Adhi-dot/Projek-Ngantuk.git && cd Projek-Ngantuk
 pip install -e .[dev]
 
 mabaops init --demo   # data contoh
